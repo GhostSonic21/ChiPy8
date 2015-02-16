@@ -20,8 +20,8 @@ memory = [0] * 4096 #4k memory
 V = [0] * 16 #fifteen registers
 #carry = False #carry flag, sometimes called VF
 I = 0 #Index register
-pc = 0 #program counter
-graphic = [0] * (64*32) #pixel array
+pc = 0x200 #program counter
+graphic = [0] * (2048) #pixel array
 
 delay = 0
 sound = 0 #delay and sound timers
@@ -39,6 +39,26 @@ random.seed()
 #cycle
 cycleCount = 0
 
+#font set
+fontSet = [0xF0, 0x90, 0x90, 0x90, 0xF0, 
+  0x20, 0x60, 0x20, 0x20, 0x70, 
+  0xF0, 0x10, 0xF0, 0x80, 0xF0, 
+  0xF0, 0x10, 0xF0, 0x10, 0xF0, 
+  0x90, 0x90, 0xF0, 0x10, 0x10, 
+  0xF0, 0x80, 0xF0, 0x10, 0xF0, 
+  0xF0, 0x80, 0xF0, 0x90, 0xF0, 
+  0xF0, 0x10, 0x20, 0x40, 0x40, 
+  0xF0, 0x90, 0xF0, 0x90, 0xF0, 
+  0xF0, 0x90, 0xF0, 0x10, 0xF0,
+  0xF0, 0x90, 0xF0, 0x90, 0x90, 
+  0xE0, 0x90, 0xE0, 0x90, 0xE0, 
+  0xF0, 0x80, 0x80, 0x80, 0xF0, 
+  0xE0, 0x90, 0x90, 0x90, 0xE0, 
+  0xF0, 0x80, 0xF0, 0x80, 0xF0, 
+  0xF0, 0x80, 0xF0, 0x80, 0x80]
+
+
+
 def main():
 	global delay
 	global sound
@@ -48,14 +68,20 @@ def main():
 	global I
 	global V
 	global cycleCount
+	global drawFlag
+	global graphic
+	k = 0
 	pass
 	#Graphics
+	display = pygame.display.set_mode([64,32])
+	display_array = pygame.PixelArray(display)
 	#Input setup
 	#Init system
 	init()
 	#Game load
 	while True: #main emulation loop
 		pass
+		pygame.event.pump()
 		cycle()
 		#Emulate cycle
 		if cycleCount  == 60:
@@ -63,8 +89,25 @@ def main():
 			cycleCount = 0
 		if drawFlag:
 			pass #placeholder for drawing
+			for i in range(0, 32):
+				for j in range(0, 64):
+					if graphic[k]:
+						display_array[j, i] = 0xffffff
+					else:
+						display_array[j, i] = 0x0
+					k += 1
+			
+			k = 0
+			pygame.display.update()
+			drawFlag = False
 		
 def init():
+	#Display
+	pygame.init()
+	#Font
+	for i in range(0,80):
+		memory[i] = fontSet[i]
+	#Rom
 	rom = open(file, 'rb')
 	for i in range(0,os.path.getsize(file)):
 		memory[512 + i] = ord(rom.read(1))
@@ -105,14 +148,17 @@ def executeInst(opcode):
 		global I
 		global V
 		global stackp
+		global drawFlag
 		if (opcode & 0xFF) == 0xE0:
 			pass #Clear the screen
+			for i in range(0,2048):
+				graphic[i] = 0x0
+			drawFlag = True
+			pc = pc + 2
 		elif (opcode & 0xFF) == 0xEE:
 			pass #return from a subroutine
 			stackp -= stackp
 			pc = stack[stackp]
-		else:
-			pass #0NNN the fuck does this do?
 		pc = pc + 2
 	def one():
 		global delay
@@ -159,7 +205,7 @@ def executeInst(opcode):
 		global pc
 		global I
 		global V
-		if V[((opcode & 0xFF0) >> 4)] == V[((opcode & 0xFF0) >> 8)]:
+		if V[((opcode & 0xF0) >> 4)] == V[((opcode & 0xF00) >> 8)]:
 			pc = pc + 4
 		else:
 			pc = pc + 2
@@ -178,7 +224,7 @@ def executeInst(opcode):
 		global I
 		global V
 		pass #7XNN add NN to VX
-		V[((opcode & 0xF00) >> 8)] = 0xFF & (V[((opcode & 0xF00) >> 8)] + (opcode & 0xFF))
+		V[((opcode & 0xF00) >> 8)] += (opcode & 0xFF) & 0xFF
 		pc = pc + 2
 	def eight():
 		global delay
@@ -226,7 +272,7 @@ def executeInst(opcode):
 			
 		if (opcode & 0xF) == 0xE:
 			pass #Shifts VX left by one. VF is set to the value of the most significant bit of VX before the shift
-			V[0xf] = V[((opcode & 0XF00) >> 7)]
+			V[0xf] = V[((opcode & 0XF00) >> 8)] >> 7
 			V[((opcode & 0XF00) >> 8)] = V[((opcode & 0XF00) >> 8)] << 1
 			V[((opcode & 0XF00) >> 8)] = V[((opcode & 0XF00) >> 8)] & 0xff
 			
@@ -238,7 +284,7 @@ def executeInst(opcode):
 		global I
 		global V
 		pass #Skips the next instruction if VX doesn't equal VY.
-		if V[((opcode & 0xFF0) >> 4)] != V[((opcode & 0xFF0) >> 8)]:
+		if V[((opcode & 0xF0) >> 4)] != V[((opcode & 0xF00) >> 8)]:
 			pc = pc + 4
 		else:
 			pc = pc + 2
@@ -265,7 +311,7 @@ def executeInst(opcode):
 		global I
 		global V
 		pass #Sets VX to a random number, masked by NN.
-		V[((opcode & 0xFF0) >> 8)] = random.randrange(0,255) & (opcode & 0xFF)
+		V[((opcode & 0xF00) >> 8)] = (random.randrange(0,255)) & (opcode & 0xFF)
 		pc = pc + 2
 	def D():
 		global delay
@@ -273,7 +319,26 @@ def executeInst(opcode):
 		global pc
 		global I
 		global V
+		global drawFlag
+		global graphic
 		pass #Too fucking long to put here
+		#
+		x = V[((opcode & 0XF00) >> 8)]
+		y = V[((opcode & 0XF0) >> 4)]
+		height = opcode & 0xF
+		pixel = 0
+		
+		V[0XF] = 0
+		for yline in range(0,height):
+			pixel = memory[I + yline]
+			for xline in range(0,8):
+				if (pixel & (0x80 >> xline)) != 0: 
+					if graphic[(x + xline + ((y + yline) * 64))] == 1:
+						V[0xF] = 1
+					graphic[x + xline + ((y + yline) * 64)] ^= 1
+				
+				
+		drawFlag = True
 		pc = pc + 2
 	def E():
 		global delay
@@ -283,9 +348,10 @@ def executeInst(opcode):
 		global V
 		if (opcode & 0xFF) == 0x9E:
 			pass
+			pc = pc + 2
 		if (opcode & 0xFF) == 0xA1:
 			pass
-		pc = pc + 2
+			pc = pc + 4
 	def F(): #This has a fuckton
 		global delay
 		global sound
@@ -294,28 +360,34 @@ def executeInst(opcode):
 		global V
 		if (opcode & 0xFF) == 0x07:
 			pass
-			V[((opcode & 0xFF0) >> 8)] = delay
+			V[((opcode & 0xF00) >> 8)] = delay
 		if (opcode & 0xFF) == 0x0A:
 			pass
-			
+			V[((opcode & 0xF00) >> 8)] = 0
 		if (opcode & 0xFF) == 0x15:
 			pass
-			delay = V[((opcode & 0xFF0) >> 8)]
+			delay = V[((opcode & 0xF00) >> 8)]
 		if (opcode & 0xFF) == 0x18:
 			pass
-			sound = V[((opcode & 0xFF0) >> 8)]
+			sound = V[((opcode & 0xF00) >> 8)]
 		if (opcode & 0xFF) == 0x1E:
 			pass
-			I = I + V[((opcode & 0xFF0) >> 8)]
+			I = I + V[((opcode & 0xF00) >> 8)]
+			if I > 0xff:
+				I = I & 0xff
+				V[0xf] = 1
+			else:
+				V[0xf] = 0
 		if (opcode & 0xFF) == 0x29:
 			pass
+			I = V[((opcode & 0xF00) >> 8)] * 0x5
 			
 		if (opcode & 0xFF) == 0x33:
 			pass
 			#V[((opcode & 0xFF0) >> 8)] = VX
-			memory[I] = int(V[((opcode & 0xFF0) >> 8)] /100)
-			memory[I+1] = int(V[((opcode & 0xFF0) >> 8)]/10 % 10)
-			memory[I+2] = int(V[((opcode & 0xFF0) >> 8)] % 10)
+			memory[I] = int(V[((opcode & 0xF00) >> 8)] /100)
+			memory[I+1] = int(V[((opcode & 0xF00) >> 8)]/10 % 10)
+			memory[I+2] = int(V[((opcode & 0xF00) >> 8)] % 10)
 		if (opcode & 0xFF) == 0x55:
 			pass
 			for i in range (0,16):
@@ -324,6 +396,7 @@ def executeInst(opcode):
 			pass
 			for i in range (0,16):
 				V[i] = memory[I + i]
+			I = V[((opcode & 0xF00) >> 8)] + 1
 		pc = pc + 2
 		
 	#
