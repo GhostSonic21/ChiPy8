@@ -4,7 +4,6 @@ import pygame
 import time
 import os
 import random
-from bitConversions import *
 
 #File
 file = "./pong2.c8"
@@ -21,7 +20,8 @@ V = [0] * 16 #fifteen registers
 #carry = False #carry flag, sometimes called VF
 I = 0 #Index register
 pc = 0x200 #program counter
-graphic = [0] * (2048) #pixel array
+#graphic = [0] * (2048) #pixel array
+graphic = [[0] * 64 for i in range(32)]
 
 delay = 0
 sound = 0 #delay and sound timers
@@ -92,15 +92,23 @@ def main():
 			cycleCount = 0
 		if drawFlag:
 			pass #placeholder for drawing
-			for i in range(0, 32):
+			'''for i in range(0, 32):
 				for j in range(0, 64):
 					if graphic[k]:
 						display_array[j, i] = 0xffffff
 					else:
 						display_array[j, i] = 0x0
-					k += 1
+					k += 1'''
 			
 			k = 0
+			for i in range(0,32):
+				for j in range(0,64):
+					if graphic[i][j]:
+						display_array[j,i] = 0xffffff
+					else:
+						display_array[j,i] = 0x0
+					
+					
 			pygame.display.update()
 			drawFlag = False
 		
@@ -164,8 +172,9 @@ def executeInst(opcode):
 	if first == 0x0:
 		if (opcode & 0xFF) == 0xE0:
 			pass #Clear the screen
-			for i in range(0,2048):
-				graphic[i] = 0x0
+			#for i in range(0,2040):
+			#	graphic[i] = 0x0
+			graphic = [[0] * 64 for i in range(32)]
 			drawFlag = True
 			pc = pc + 2
 		elif (opcode & 0xFF) == 0xEE:
@@ -179,7 +188,6 @@ def executeInst(opcode):
 		stack[stackp] = pc
 		stackp = stackp + 1
 		pc = opcode & 0xfff
-		pc = pc + 2
 	if first == 0x3:
 		if V[((opcode & 0xF00) >> 8)] == (opcode & 0xFF):
 			pc = pc + 4
@@ -200,7 +208,7 @@ def executeInst(opcode):
 		pc = pc + 2
 	if first == 0x7:
 		pass #7XNN add NN to VX
-		V[((opcode & 0xF00) >> 8)] += (opcode & 0xFF) & 0xFF
+		V[((opcode & 0xF00) >> 8)] = (V[((opcode & 0xF00) >> 8)] + (opcode & 0xFF)) & 0xFF
 		pc = pc + 2
 	if first == 0x8:
 		#Theres a bit of shit here
@@ -250,7 +258,7 @@ def executeInst(opcode):
 		pc = pc + 2
 	if first == 0x9:
 		pass #Skips the next instruction if VX doesn't equal VY.
-		if V[((opcode & 0xF0) >> 4)] != V[((opcode & 0xF00) >> 8)]:
+		if V[((opcode & 0xF00) >> 8)] != V[((opcode & 0xF0) >> 4)]:
 			pc = pc + 4
 		else:
 			pc = pc + 2
@@ -273,14 +281,21 @@ def executeInst(opcode):
 		pixel = 0
 		
 		V[0XF] = 0
-		for yline in range(0,height):
+		'''for yline in range(0,height):
 			pixel = memory[I + yline]
 			for xline in range(0,8):
 				if (pixel & (0x80 >> xline)) != 0: 
-					if graphic[(x + xline + ((y + yline) * 64))] == 1:
+					if graphic[(x + xline + ((y + yline) * 64))& 0xfff] == 1:
 						V[0xF] = 1
-					graphic[x + xline + ((y + yline) * 64)] ^= 1
-		
+					graphic[x + xline + ((y + yline) * 64) & 0xfff] ^= 1'''
+		for yline in range (0,height):
+			pixelState = memory[I+yline]
+			for xline in range(0,8):
+				if(pixelState & (0x80 >> xline)) != 0:
+					if graphic[(y + yline)][(x + xline)] == 1:
+						V[0xF] = 1
+					graphic[(y + yline)][(x + xline)] ^= 1
+			
 				
 				
 		drawFlag = True
@@ -308,15 +323,14 @@ def executeInst(opcode):
 		if (opcode & 0xFF) == 0x1E:
 			pass
 			I = I + V[((opcode & 0xF00) >> 8)]
-			if I > 0xff:
-				I = I & 0xff
+			if I > 0xffff:
+				I = I & 0xffff
 				V[0xf] = 1
 			else:
 				V[0xf] = 0
 		if (opcode & 0xFF) == 0x29:
 			pass
-			I = V[((opcode & 0xF00) >> 8)] * 0x5
-			
+			I = (V[((opcode & 0xF00) >> 8)] * 0x5) & 0xffff
 		if (opcode & 0xFF) == 0x33:
 			pass
 			#V[((opcode & 0xFF0) >> 8)] = VX
@@ -325,13 +339,13 @@ def executeInst(opcode):
 			memory[I+2] = int(V[((opcode & 0xF00) >> 8)] % 10)
 		if (opcode & 0xFF) == 0x55:
 			pass
-			for i in range (0,16):
+			for i in range (0,((opcode & 0xF00) >> 8)+1):
 				memory[I + i] = V[i]
 		if (opcode & 0xFF) == 0x65:
 			pass
-			for i in range (0,16):
+			for i in range (0,((opcode & 0xF00) >> 8)+1):
 				V[i] = memory[I + i]
-			I = V[((opcode & 0xF00) >> 8)] + 1
+			I = (I + ((opcode & 0xF00) >> 8) + 1) & 0xFFFF
 		pc = pc + 2
 		
 	#
@@ -353,7 +367,7 @@ def executeInst(opcode):
 				0xF : F,
 			}
 	first[opcode >> 12]()'''
-	time.sleep(1/60)
+	time.sleep(1/300)
 	#
 
 if __name__ == "__main__":
