@@ -60,16 +60,19 @@ fontSet = [0xF0, 0x90, 0x90, 0x90, 0xF0,
 
 
 def main():
-	global delay
-	global sound
-	global delay
-	global sound
-	global pc
-	global I
+	global opcode
+	global memory
 	global V
-	global cycleCount
-	global drawFlag
+	global I
+	global pc
 	global graphic
+	global delay
+	global sound
+	global stack
+	global stackp
+	global key
+	global drawFlag
+	global cycleCount
 	k = 0
 	pass
 	#Graphics
@@ -114,12 +117,19 @@ def init():
 
 def cycle():
 	pass	
+	global opcode
+	global memory
+	global V
+	global I
+	global pc
+	global graphic
 	global delay
 	global sound
-	global pc
-	global I
-	global V
-	global cycleCount 
+	global stack
+	global stackp
+	global key
+	global drawFlag
+	global cycleCount
 	cycleCount += 1
 	#Fetch
 	opcode = (memory[pc] << 8) | memory[pc+1]
@@ -135,20 +145,23 @@ def cycle():
 	
 def executeInst(opcode):
 	#The first 4 most significant bits are the first indicator
+	global memory
+	global V
+	global I
+	global pc
+	global graphic
 	global delay
 	global sound
-	global pc
-	global I
-	global V
+	global stack
+	global stackp
+	global key
+	global drawFlag
+	#Constant
+	VX = (opcode & 0xF00) >> 8
+	VY = (opcode & 0xF0) >> 4
+	first = opcode >> 12
 	
-	def zero():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
-		global stackp
-		global drawFlag
+	if first == 0x0:
 		if (opcode & 0xFF) == 0xE0:
 			pass #Clear the screen
 			for i in range(0,2048):
@@ -160,78 +173,36 @@ def executeInst(opcode):
 			stackp -= stackp
 			pc = stack[stackp]
 		pc = pc + 2
-	def one():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0x1:
 		pc = opcode & 0xfff #Jumps to a subroutine
-	def two():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
-		global stack
-		global stackp
+	if first == 0x2:
 		stack[stackp] = pc
 		stackp = stackp + 1
 		pc = opcode & 0xfff
 		pc = pc + 2
-	def three():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0x3:
 		if V[((opcode & 0xF00) >> 8)] == (opcode & 0xFF):
 			pc = pc + 4
 		else:
 			pc = pc + 2
-	def four():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0x4:
 		if V[((opcode & 0xF00) >> 8)] != (opcode & 0xFF):
 			pc = pc + 4
 		else:
 			pc = pc + 2
-	def five():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0x5:
 		if V[((opcode & 0xF0) >> 4)] == V[((opcode & 0xF00) >> 8)]:
 			pc = pc + 4
 		else:
 			pc = pc + 2
-	def six():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0x6:
 		V[((opcode & 0xF00) >> 8)] = (opcode & 0xFF)
 		pc = pc + 2
-	def seven():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0x7:
 		pass #7XNN add NN to VX
 		V[((opcode & 0xF00) >> 8)] += (opcode & 0xFF) & 0xFF
 		pc = pc + 2
-	def eight():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0x8:
 		#Theres a bit of shit here
 		if (opcode & 0xF) == 0x0:
 			V[((opcode & 0XF00) >> 8)] = V[((opcode & 0XF0) >> 4)]
@@ -277,50 +248,23 @@ def executeInst(opcode):
 			V[((opcode & 0XF00) >> 8)] = V[((opcode & 0XF00) >> 8)] & 0xff
 			
 		pc = pc + 2
-	def nine():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0x9:
 		pass #Skips the next instruction if VX doesn't equal VY.
 		if V[((opcode & 0xF0) >> 4)] != V[((opcode & 0xF00) >> 8)]:
 			pc = pc + 4
 		else:
 			pc = pc + 2
-	def A():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0xa:
 		I = opcode & 0xFFF
 		pc = pc + 2
-	def B():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0xb:
 		pass #Jumps to the address NNN plus V0.
 		pc = (opcode & 0xfff) + V[0x0]
-	def C():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0xc:
 		pass #Sets VX to a random number, masked by NN.
 		V[((opcode & 0xF00) >> 8)] = (random.randrange(0,255)) & (opcode & 0xFF)
 		pc = pc + 2
-	def D():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
-		global drawFlag
-		global graphic
+	if first == 0xd:
 		pass #Too fucking long to put here
 		#
 		x = V[((opcode & 0XF00) >> 8)]
@@ -336,28 +280,19 @@ def executeInst(opcode):
 					if graphic[(x + xline + ((y + yline) * 64))] == 1:
 						V[0xF] = 1
 					graphic[x + xline + ((y + yline) * 64)] ^= 1
+		
 				
 				
 		drawFlag = True
 		pc = pc + 2
-	def E():
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0xe:
 		if (opcode & 0xFF) == 0x9E:
 			pass
 			pc = pc + 2
 		if (opcode & 0xFF) == 0xA1:
 			pass
 			pc = pc + 4
-	def F(): #This has a fuckton
-		global delay
-		global sound
-		global pc
-		global I
-		global V
+	if first == 0xf: #This has a fuckton
 		if (opcode & 0xFF) == 0x07:
 			pass
 			V[((opcode & 0xF00) >> 8)] = delay
@@ -400,7 +335,7 @@ def executeInst(opcode):
 		pc = pc + 2
 		
 	#
-	first = {	0x0 : zero,
+	'''first = {	0x0 : zero,
 				0x1 : one,
 				0x2 : two,
 				0x3 : three,
@@ -417,7 +352,7 @@ def executeInst(opcode):
 				0xE : E,
 				0xF : F,
 			}
-	first[opcode >> 12]()
+	first[opcode >> 12]()'''
 	time.sleep(1/60)
 	#
 
