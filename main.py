@@ -7,7 +7,7 @@ import random
 from bitConversions import *
 
 #File
-file = "./tictac.c8"
+file = "./pong2.c8"
 
 #Storage
 opcode = 0
