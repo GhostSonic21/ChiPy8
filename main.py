@@ -6,7 +6,7 @@ import os
 import random
 
 #File
-file = "./pong2.c8"
+file = "./tictac.c8"
 
 #Storage
 opcode = 0
