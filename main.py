@@ -181,14 +181,14 @@ def executeInst(opcode):
 			pc = pc + 2
 		elif (opcode & 0xFF) == 0xEE:
 			pass #return from a subroutine
-			stackp -= stackp
+			stackp -= 1
 			pc = stack[stackp]
 		pc = pc + 2
 	if first == 0x1:
 		pc = opcode & 0xfff #Jumps to a subroutine
 	if first == 0x2:
 		stack[stackp] = pc
-		stackp = stackp + 1
+		stackp += 1
 		pc = opcode & 0xfff
 	if first == 0x3:
 		if V[((opcode & 0xF00) >> 8)] == (opcode & 0xFF):
