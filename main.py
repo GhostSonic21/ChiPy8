@@ -92,6 +92,7 @@ def main():
 			cycleCount = 0
 		if drawFlag:
 			pass #placeholder for drawing
+			time.sleep(1/60)
 			'''for i in range(0, 32):
 				for j in range(0, 64):
 					if graphic[k]:
@@ -111,7 +112,8 @@ def main():
 					
 			pygame.display.update()
 			drawFlag = False
-		
+
+			
 def init():
 	#Display
 	pygame.init()
@@ -232,10 +234,10 @@ def executeInst(opcode):
 			pass #VY is subtracted from VX. VF is set to 0 when there's a borrow, and 1 when there isn't.
 			V[((opcode & 0XF00) >> 8)] = V[((opcode & 0XF00) >> 8)] - V[((opcode & 0XF0) >> 4)]
 			if V[((opcode & 0XF00) >> 8)] < 0x0:
-				V[0xf] = 1
+				V[0xf] = 0
 				V[((opcode & 0XF00) >> 8)] = V[((opcode & 0XF00) >> 8)] & 0xff
 			else:
-				V[0xf] = 0
+				V[0xf] = 1
 		if (opcode & 0xF) == 0x6:
 			pass #Shifts VX right by one. VF is set to the value of the least significant bit of VX before the shift
 			V[0xf] = V[((opcode & 0XF00) >> 8)] & 0b1
@@ -244,10 +246,10 @@ def executeInst(opcode):
 			pass #Sets VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't.
 			V[((opcode & 0XF00) >> 8)] = V[((opcode & 0XF0) >> 4)] - V[((opcode & 0XF00) >> 8)]
 			if V[((opcode & 0XF00) >> 8)] < 0x0:
-				V[0xf] = 1
+				V[0xf] = 0
 				V[((opcode & 0XF00) >> 8)] = V[((opcode & 0XF00) >> 8)] & 0xff
 			else:
-				V[0xf] = 0
+				V[0xf] = 1
 			
 		if (opcode & 0xF) == 0xE:
 			pass #Shifts VX left by one. VF is set to the value of the most significant bit of VX before the shift
@@ -280,7 +282,7 @@ def executeInst(opcode):
 		height = opcode & 0xF
 		pixel = 0
 		
-		V[0XF] = 0
+		V[0Xf] = 0
 		'''for yline in range(0,height):
 			pixel = memory[I + yline]
 			for xline in range(0,8):
@@ -334,9 +336,9 @@ def executeInst(opcode):
 		if (opcode & 0xFF) == 0x33:
 			pass
 			#V[((opcode & 0xFF0) >> 8)] = VX
-			memory[I] = int(V[((opcode & 0xF00) >> 8)] /100)
-			memory[I+1] = int(V[((opcode & 0xF00) >> 8)]/10 % 10)
-			memory[I+2] = int(V[((opcode & 0xF00) >> 8)] % 10)
+			memory[I] = int(V[((opcode & 0xF00) >> 8)] /100) & 0xff
+			memory[I+1] = int(V[((opcode & 0xF00) >> 8)]/10 % 10) & 0xff
+			memory[I+2] = int(V[((opcode & 0xF00) >> 8)] % 10) & 0xff
 		if (opcode & 0xFF) == 0x55:
 			pass
 			for i in range (0,((opcode & 0xF00) >> 8)+1):
@@ -367,8 +369,8 @@ def executeInst(opcode):
 				0xF : F,
 			}
 	first[opcode >> 12]()'''
-	time.sleep(1/300)
+	#time.sleep(1/300)
 	#
-
+			
 if __name__ == "__main__":
 	main()
