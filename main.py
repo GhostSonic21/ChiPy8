@@ -178,7 +178,6 @@ def executeInst(opcode):
 			#	graphic[i] = 0x0
 			graphic = [[0] * 64 for i in range(32)]
 			drawFlag = True
-			pc = pc + 2
 		elif (opcode & 0xFF) == 0xEE:
 			pass #return from a subroutine
 			stackp -= 1
