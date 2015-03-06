@@ -6,7 +6,7 @@ import os
 import random
 
 #File
-file = "./pong2.c8"
+file = "./blinky.c8"
 
 #Storage
 opcode = 0
@@ -359,8 +359,8 @@ def executeInst(opcode):
 		if (opcode & 0xFF) == 0x1E:
 			pass
 			I = I + V[((opcode & 0xF00) >> 8)]
-			if I > 0xfff:
-				I = I & 0xfff
+			if I > 0xffff:
+				I = I & 0xffff
 				V[0xf] = 1
 			else:
 				V[0xf] = 0
