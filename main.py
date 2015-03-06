@@ -21,7 +21,8 @@ V = [0] * 16 #fifteen registers
 I = 0 #Index register
 pc = 0x200 #program counter
 #graphic = [0] * (2048) #pixel array
-graphic = [[0] * 64 for i in range(32)]
+#64/32
+graphic = [[0] * 64 for i in range(36)] #36 because sometimes it I get an array out of bounds when I shouldn't(?)
 
 delay = 0
 sound = 0 #delay and sound timers
@@ -141,6 +142,24 @@ def cycle():
 	global drawFlag
 	global cycleCount
 	cycleCount += 1
+	#Gather key states
+	keyStates = pygame.key.get_pressed()
+	key[0x1] = keyStates[pygame.K_1]
+	key[0x2] = keyStates[pygame.K_2]
+	key[0x3] = keyStates[pygame.K_3]
+	key[0xc] = keyStates[pygame.K_4]
+	key[0x4] = keyStates[pygame.K_q]
+	key[0x5] = keyStates[pygame.K_w]
+	key[0x6] = keyStates[pygame.K_e]
+	key[0xd] = keyStates[pygame.K_r]
+	key[0x7] = keyStates[pygame.K_a]
+	key[0x8] = keyStates[pygame.K_s]
+	key[0x9] = keyStates[pygame.K_d]
+	key[0xe] = keyStates[pygame.K_f]
+	key[0xa] = keyStates[pygame.K_z]
+	key[0x0] = keyStates[pygame.K_x]
+	key[0xb] = keyStates[pygame.K_c]
+	key[0xf] = keyStates[pygame.K_v]
 	#Fetch
 	opcode = (memory[pc] << 8) | memory[pc+1]
 	#Decode
@@ -279,7 +298,7 @@ def executeInst(opcode):
 		x = V[((opcode & 0XF00) >> 8)]
 		y = V[((opcode & 0XF0) >> 4)]
 		height = opcode & 0xF
-		pixel = 0
+		#pixel = 0
 		
 		V[0Xf] = 0
 		'''for yline in range(0,height):
@@ -304,17 +323,33 @@ def executeInst(opcode):
 	if first == 0xe:
 		if (opcode & 0xFF) == 0x9E:
 			pass
-			pc = pc + 2
+			#pc = pc + 2
+			if key[V[((opcode & 0XF00) >> 8)]] == 1:
+				pc += 4
+			else:
+				pc += 2
 		if (opcode & 0xFF) == 0xA1:
 			pass
-			pc = pc + 4
+			#pc = pc + 4
+			if key[V[((opcode & 0XF00) >> 8)]] != 1:
+				pc += 4
+			else:
+				pc += 2
 	if first == 0xf: #This has a fuckton
 		if (opcode & 0xFF) == 0x07:
 			pass
 			V[((opcode & 0xF00) >> 8)] = delay
 		if (opcode & 0xFF) == 0x0A:
 			pass
-			V[((opcode & 0xF00) >> 8)] = 0
+			keyPress = False
+			#V[((opcode & 0xF00) >> 8)] = 0
+			#Try this
+			for i in range(0,16):
+				if key[i] != 0:
+					V[((opcode & 0xF00) >> 8)] = i
+					keyPress = True
+			if not keyPress:
+				return
 		if (opcode & 0xFF) == 0x15:
 			pass
 			delay = V[((opcode & 0xF00) >> 8)]
