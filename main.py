@@ -4,9 +4,12 @@ import pygame
 import time
 import os
 import random
+from tkinter import filedialog, Tk
 
 #File
-file = "./blinky.c8"
+root = Tk()
+root.withdraw()
+file = filedialog.askopenfilename(filetypes = [('Chip 8 ROM', '.c8'), ('All files','.*')])
 
 #Storage
 opcode = 0
