@@ -40,7 +40,6 @@ def main():
 		key[0xb] = keyStates[pygame.K_c]
 		key[0xf] = keyStates[pygame.K_v]
 		system.cycle(key)
-		print(hex(system.pc) + " ")
 		if system.drawFlag:
 			for i in range(0,32):
 				for j in range(0,64):
