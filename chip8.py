@@ -57,9 +57,9 @@ class Chip8:
 		self.key = key
 		opcode = (self.memory[self.pc] << 8) | self.memory[self.pc+1] 	# opcodes are always 2bytes large
 		self.executeInst(opcode)
-		if self.delay != 0:
+		if self.delay > 0:
 			self.delay -= 1
-		if self.sound != 0:
+		if self.sound > 0:
 			self.sound -= 1
 		
 	def executeInst(self, opcode):
