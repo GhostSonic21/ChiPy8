@@ -14,13 +14,14 @@ key = [False] * 16
 
 def main():
 	# Set up Pygame
-	display = pygame.display.set_mode([64,32])
-	display_array = pygame.PixelArray(display)
+	chip8Display = pygame.Surface([64,32])								# Display surface
+	display_array = pygame.PixelArray(chip8Display)						# Array for manipulating the pixels
+	mainDisplay = pygame.display.set_mode([320,160])					# Actual display window, 4x native size
 	
 	# Create the Chip 8 object
 	system = chip8.Chip8(file)
 	
-	while True:	# Main loop
+	while True:	# Main loop		
 		pygame.event.pump()
 		keyStates = pygame.key.get_pressed()
 		key[0x1] = keyStates[pygame.K_1]
@@ -47,6 +48,7 @@ def main():
 						display_array[j,i] = 0xffffff
 					else:
 						display_array[j,i] = 0x0
+			pygame.transform.scale(chip8Display, (320,160), mainDisplay)	# Scales up the chip 8 display and puts it to the main display
 			pygame.display.update()
 			
 if __name__ == "__main__":

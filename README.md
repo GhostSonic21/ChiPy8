@@ -7,4 +7,4 @@ Requires pygame. Version compatible with Python 3.4 can be found [here](http://w
 
 ### Screenshots
 
-![](http://i.imgur.com/SAvzdF7.png) ![](http://i.imgur.com/o2Vre0f.png) ![](http://i.imgur.com/ukgM8Wi.png)
+![](http://i.imgur.com/2UVgZVk.png) ![](http://i.imgur.com/qPT4Uqj.png) ![](http://i.imgur.com/4Fccw0T.png)
